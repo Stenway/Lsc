@@ -1,0 +1,654 @@
+﻿Grammar
+	# --- Whitespace -----------------------
+	
+	Chars
+		<WsChar>					0009 000B 000C 000D 0020 0085 00A0 1680 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 200A 2028 2029 202F 205F 3000
+    <LineBreakChar>		000A
+	End
+  Tokens
+		<LineBreak>				<LineBreakChar>
+		<Ws>							Repeat+ <WsChar>
+	End
+	
+	
+	# --- Comments -----------------------
+	
+	Chars
+		<HashChar>			"#"
+    <CommentChar>		Any Except <LineBreakChar>
+	End
+	Tokens
+		<CommentText>		Repeat+ <CommentChar>
+    <CommentStart>	<HashChar>
+	End
+	Syntax
+		<Comment>				<CommentStart> Optional <CommentText>
+	End
+	
+	
+	# --- Identifiers -----------------------
+	
+	Chars
+		<UnderscoreChar>					_
+		<LetterNumberChar>				Category Nl
+		<LetterChar>							Letter <LetterNumberChar>
+		<IdentifierStartChar>			<UnderscoreChar> <LetterChar>
+		
+		<ConnectorChar>						Category Pc
+		<MarkChar>								Category Mc Category Mn
+		<IdentifierRestChar>			<LetterChar> Digit <ConnectorChar> <MarkChar>
+		
+		<BackslashChar>						\
+		<DotChar>									.
+		<VersionDigit>						Range 0 9
+	End	
+	Tokens
+		<Identifier>							<IdentifierStartChar>	Repeat* <IdentifierRestChar>
+		<IdentifierDot>						<DotChar>
+		<Backslash>								<BackslashChar>
+		<VersionPart>							Repeat+ <VersionDigit>
+		<VersionDot>							<DotChar>
+		
+		<TypeName>								<IdentifierStartChar>	Repeat* <IdentifierRestChar>
+		
+		<NtIdentifier>						<IdentifierStartChar>	Repeat* <IdentifierRestChar>
+		<NtIdentifierDot>					<DotChar>
+		
+		<PkgIdentifier>						<IdentifierStartChar>	Repeat* <IdentifierRestChar>
+		<PkgIdentifierDot>				<DotChar>
+		<PkgBackslash>						<BackslashChar>
+	End	
+	Syntax
+		<FollowingVersionPart>		Optional <Ws> <VersionDot> Optional <Ws> <VersionPart>
+		<PreReleaseVersion>				<VersionPart> ! <FollowingVersionPart>
+		<ReleaseVersion>					<VersionPart> ! <FollowingVersionPart> <FollowingVersionPart> <FollowingVersionPart>
+		
+		<IdentifierChain>					<Identifier> Repeat* ( Optional <Ws> <IdentifierDot> Optional <Ws> <Identifier> )
+		
+		<NtIdentifierChain>				<NtIdentifier> Repeat* ( Optional <Ws> <NtIdentifierDot> Optional <Ws> <NtIdentifier> )
+		<NamespaceID>							<PkgIdentifierChain> Optional ( Optional <Ws> <Backslash> Optional <Ws> <NtIdentifierChain> )
+		
+		<PkgIdentifierChain>			<PkgIdentifier> Repeat* ( Optional <Ws> <PkgIdentifierDot> Optional <Ws> <PkgIdentifier> )
+		<PackageID>								<PkgIdentifierChain> Optional ( Optional <Ws> <PkgBackslash> Optional <Ws> <ReleaseVersion> Optional ( Optional <Ws> <PkgBackslash> Optional <Ws> <PreReleaseVersion> ) )
+		<UsingNamespaceID>				<PackageID> Optional ( Optional <Ws> <Backslash> Optional <Ws> <NtIdentifierChain> )
+		
+		<CodeBlockNamespaceOrEntityID>		<PackageID> Optional <Ws> <Backslash> Optional <Ws> <NtIdentifier>
+	End
+	
+	
+	# --- Int Literals -----------------------
+	
+	Chars
+		<IntChar>				Range 0 9
+		<ZeroChar>			0
+		<BinaryChar>		0 1
+		<BChar>					b B
+		<XChar>					x X
+		<HexChar>				Range 0 9 Range a f Range A F
+	End
+	Tokens
+		<BinaryIntLiteral>		<ZeroChar> <BChar> <BinaryChar> Repeat* ( Repeat* <UnderscoreChar> <BinaryChar> )
+		<HexIntLiteral>				<ZeroChar> <XChar> <HexChar> Repeat* ( Repeat* <UnderscoreChar> <HexChar> )
+		<DecimalIntLiteral>		<IntChar> Repeat* ( Repeat* <UnderscoreChar> <IntChar> )
+	End
+	Syntax
+		<IntLiteral>					[ <BinaryIntLiteral> <HexIntLiteral> <DecimalIntLiteral> ]
+	End
+	
+	
+	# --- Float Literal -----------------------
+	
+	Chars
+		<ExponentialChar>		e E
+		<MinusChar>					"-"
+	End
+	Tokens
+		<FloatLiteral>		<IntChar> Repeat* ( Repeat* <UnderscoreChar> <IntChar> ) <DotChar> <IntChar> Repeat* ( Repeat* <UnderscoreChar> <IntChar> ) Optional ( <ExponentialChar> Optional <MinusChar> <IntChar> Repeat* ( Repeat* <UnderscoreChar> <IntChar> ) )
+	End
+	
+	
+	# --- Bool Literal -----------------------
+	
+	Tokens
+		<TrueKeyword>			CiString true
+		<FalseKeyword>		CiString false
+	End
+	Syntax
+		<BoolLiteral>			[ <TrueKeyword> <FalseKeyword> ]
+	End
+	
+	
+	# --- Char Literal -----------------------
+	
+	Chars
+		<SingleQuoteChar>     '
+		<SimpleCharChar>			Any Except <SingleQuoteChar> <LineBreakChar> <BackslashChar>
+		<EscapedCharChar>			0 <BackslashChar> <SingleQuoteChar> n N r R t T
+		<EscapedXChar>				x X
+		<EscapedUChar>				u U
+	End
+	Tokens
+		<CharStart>			<SingleQuoteChar>
+		<CharEnd>				<SingleQuoteChar>
+		<SimpleChar>		<SimpleCharChar>
+		<EscapedChar>		<BackslashChar> [ <EscapedCharChar> ( <EscapedXChar> <HexChar> <HexChar> ) ( <EscapedUChar> <HexChar> <HexChar> <HexChar> <HexChar> <HexChar> <HexChar> ) ]
+	End
+	Syntax
+		<CharLiteral>		<CharStart> ! [ <SimpleChar> <EscapedChar> ] <CharEnd>
+	End
+	
+	
+	# --- String Literals -----------------------
+	
+	Chars
+		<DoubleQuoteChar>     0022
+		<SimpleStringChar>		Any Except <DoubleQuoteChar> <LineBreakChar> <BackslashChar>
+		<EscapedStringChar>		0 <BackslashChar> <DoubleQuoteChar> n N r R t T
+		
+		<VerbatimStringChar>	Any Except <DoubleQuoteChar> <LineBreakChar>
+		
+		<StringBlockChar>			Any Except <DoubleQuoteChar>
+	End
+	Tokens
+		<EscapedSimpleStringChar>		<BackslashChar> [ <EscapedStringChar> ( <EscapedXChar> <HexChar> <HexChar> ) ( <EscapedUChar> <HexChar> <HexChar> <HexChar> <HexChar> <HexChar> <HexChar> ) ]
+		<SimpleStringStart>					<DoubleQuoteChar>
+		<SimpleStringEnd>						<DoubleQuoteChar>
+		<SimpleStringText>					Repeat+ <SimpleStringChar>
+		
+		<VerbatimStringStart>				<DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<VerbatimStringEnd>					<DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<TripleDoubleQuote>					<DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<VerbatimStringText>				Repeat+ <VerbatimStringChar>
+		
+		<EscapedTripleDoubleQuote>	<DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<TwoDoubleQuotes>						<DoubleQuoteChar> <DoubleQuoteChar>
+		<OneDoubleQuote>						<DoubleQuoteChar>
+		
+		<StringBlockStart>							<DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<StringBlockEnd>								<DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<StringBlockText>								Repeat+ <StringBlockChar>
+		<StringBlockIgnoredWhitespace>	Repeat* <WsChar> <LineBreakChar>
+	End
+	Syntax
+		<SimpleStringLiteral>			<SimpleStringStart> ! Repeat* [ <SimpleStringText> <EscapedSimpleStringChar> ] <SimpleStringEnd>
+		
+		<VerbatimStringContent>		Not <TripleDoubleQuote> [ <VerbatimStringText> <TwoDoubleQuotes> <OneDoubleQuote> ]
+		<VerbatimStringLiteral>		<VerbatimStringStart>	! Repeat* [ <EscapedTripleDoubleQuote> <VerbatimStringContent> ] <VerbatimStringEnd>
+		
+		<StringBlockContent>			Not <TripleDoubleQuote> [ <StringBlockText> <TwoDoubleQuotes> <OneDoubleQuote> ]
+		<StringBlockLiteral>			<StringBlockStart> <StringBlockIgnoredWhitespace> ! Repeat* [ <EscapedTripleDoubleQuote> <StringBlockContent> ] <StringBlockEnd>
+		
+		<StringLiteral>						[ <StringBlockLiteral> <VerbatimStringLiteral> <SimpleStringLiteral> ]
+	End
+	
+	
+	# --- Interpolated String Literals -----------------------
+	
+	Chars
+		<DollarChar>					$
+		<SimpleIStringChar>		Any Except <DoubleQuoteChar> <LineBreakChar> <BackslashChar> <DollarChar>
+		
+		<VerbatimIStringChar>	Any Except <DoubleQuoteChar> <LineBreakChar> <DollarChar>
+		
+		<IStringBlockChar>		Any Except <DoubleQuoteChar> <DollarChar>
+	End
+	Tokens
+		<EscapedSimpleIStringChar>	<BackslashChar> [ <EscapedStringChar> ( <EscapedXChar> <HexChar> <HexChar> ) ( <EscapedUChar> <HexChar> <HexChar> <HexChar> <HexChar> <HexChar> <HexChar> ) ]
+		<EscapedDollar>							<DollarChar> <DollarChar>
+		<SimpleIStringStart>				<DollarChar> <DoubleQuoteChar>
+		<SimpleIStringEnd>					<DoubleQuoteChar>
+		<SimpleIStringText>					Repeat+ <SimpleIStringChar>
+		
+		<VerbatimIStringStart>			<DollarChar> <DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<VerbatimIStringEnd>				<DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<VerbatimIStringText>				Repeat+ <VerbatimIStringChar>
+		
+		<IStringBlockStart>								<DollarChar> <DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<IStringBlockEnd>									<DoubleQuoteChar> <DoubleQuoteChar> <DoubleQuoteChar>
+		<IStringBlockText>								Repeat+ <IStringBlockChar>
+		<IStringBlockIgnoredWhitespace>		Repeat* <WsChar> <LineBreakChar>
+		
+		<InterpolatedArgDollar>			<DollarChar>
+	End
+	Syntax
+		
+		<InterpolatedArg>						<InterpolatedArgDollar> <Identifier>
+		<InterpolatedGroup>					<InterpolatedArgDollar> <OpeningParenthesis> ! Optional <LineContinuation> <Expression> Optional <LineContinuation> <ClosingParenthesis>
+		<SimpleIStringLiteral>			<SimpleIStringStart> ! Repeat* [ <EscapedDollar> <InterpolatedArg> <InterpolatedGroup> <SimpleIStringText> <EscapedSimpleIStringChar> ] <SimpleIStringEnd>
+		
+		<VerbatimIStringContent>		Not <TripleDoubleQuote> [ <VerbatimIStringText> <TwoDoubleQuotes> <OneDoubleQuote> ]
+		<VerbatimIStringLiteral>		<VerbatimIStringStart>	! Repeat* [ <EscapedDollar> <InterpolatedArg> <InterpolatedGroup> <EscapedTripleDoubleQuote> <VerbatimIStringContent> ] <VerbatimIStringEnd>
+		
+		<IStringBlockContent>				Not <TripleDoubleQuote> [ <IStringBlockText> <TwoDoubleQuotes> <OneDoubleQuote> ]
+		<IStringBlockLiteral>				<IStringBlockStart> <IStringBlockIgnoredWhitespace> ! Repeat* [ <EscapedDollar> <InterpolatedArg> <InterpolatedGroup> <EscapedTripleDoubleQuote> <IStringBlockContent> ] <IStringBlockEnd>
+		
+		
+		<IStringLiteral>						[ <IStringBlockLiteral>	<VerbatimIStringLiteral> <SimpleIStringLiteral> ]
+	End
+	
+
+	# --- Array Literal -----------------------
+	
+	Chars
+		<OpeningBracketChar>		[
+		<ClosingBracketChar>		]
+	End
+	Tokens
+		<OpeningBracket>				<OpeningBracketChar>
+		<ClosingBracket>				<ClosingBracketChar>
+	End
+	Syntax
+		<ArrayLiteral>					<OpeningBracket> ! Optional <LineContinuation> Optional ( <Expression> Repeat* ( Optional <LineContinuation> <Comma> Optional <LineContinuation> <Expression> ) Optional <LineContinuation> ) <ClosingBracket>
+	End
+	
+	
+	# --- Literals -----------------------
+	
+	Tokens
+		<NullKeyword>			CiString null
+	End
+	Syntax
+		<ConstantLiteral>		[ <FloatLiteral> <IntLiteral> <BoolLiteral> <CharLiteral> <StringLiteral> <NullKeyword> ]
+	End
+	
+	
+	# --- General -----------------------
+	
+	Chars
+		<EqualSignChar>						=
+		<CommaChar>								,
+		<OpeningParenthesisChar>	(
+		<ClosingParenthesisChar>	)
+		<ColonChar>								:
+	End
+	Tokens
+		<EndKeyword>					CiString end
+		<OpeningParenthesis>	<OpeningParenthesisChar>
+		<ClosingParenthesis>	<ClosingParenthesisChar>
+		<Comma>								<CommaChar>
+		<Colon>								<ColonChar>
+	End
+	Syntax
+		<LineEnd>								Optional <Ws> Optional <Comment> <LineBreak>
+		<EmptyLineContent>			Optional <Ws> Optional <Comment>
+		<EmptyLine>							<EmptyLineContent> <LineBreak>
+		<EndLine>								Optional <Ws> <EndKeyword> ! <LineEnd>
+		<LineContinuation>			[ ( Optional <Ws> <LineEnd> Optional <Ws> ) <Ws> ]
+		<ColonNotation>					Optional <Ws> <Colon>
+	End
+	
+	
+	# --- Using -----------------------
+	
+	Tokens
+		<UsingKeyword>		CiString using
+	End
+	Syntax	
+		<Using>						Optional <Ws> <UsingKeyword> ! <Ws> <UsingNamespaceID> Optional <Comment>
+		<UsingLine>				<Using> <LineBreak>
+	End
+	
+	
+	# --- Namespace -----------------------
+	
+	Tokens
+		<NamespaceKeyword>		CiString namespace
+		<InternalKeyword>			CiString internal
+	End
+	Syntax
+		<NamespaceHeadLine> 	Optional <Ws> <NamespaceKeyword> ! <Ws> <NamespaceID> <LineEnd>
+		<NamespaceEnd>				Optional <Ws> <EndKeyword> Optional <Ws> Optional <Comment>
+		
+		<Namespace>	 					<NamespaceHeadLine> ! Repeat* [ <EmptyLine> <UsingLine> <ClassLines> <EnumLines> <InterfaceLines> ] <NamespaceEnd>
+	End
+	
+	
+	# --- Parameters -----------------------
+	
+	Tokens
+		<ParamName>						<IdentifierStartChar>	Repeat* <IdentifierRestChar>
+		<ParamsKeyword>				CiString params
+	End
+	Syntax
+		<VarArgParameter>			<ParamsKeyword> <Ws> <ParamName>
+		<NormalParameter>			Not <ParamsKeyword> <ParamName>
+		
+		<NoParameters>								<OpeningParenthesis> Optional <Ws> <ClosingParenthesis>
+		<OnlyVarArgParameter>					<OpeningParenthesis> Optional <Ws> <VarArgParameter> Optional <Ws> <ClosingParenthesis>
+		<NormalParameters>						<OpeningParenthesis> Optional <Ws> <ParamName> Repeat* ( Optional <Ws> <Comma> Optional <LineContinuation> <NormalParameter> ) Optional <Ws> <ClosingParenthesis>
+		<NormalPlusVarArgParameters>	<OpeningParenthesis> Optional <Ws> <ParamName> Repeat* ( Optional <Ws> <Comma> Optional <LineContinuation> <NormalParameter> ) Optional ( Optional <Ws> <Comma> Optional <LineContinuation> <VarArgParameter> ) Optional <Ws> <ClosingParenthesis>
+		<Parameters>									[ <NoParameters> <OnlyVarArgParameter> <NormalParameters> <NormalPlusVarArgParameters> ]
+	End
+	
+	
+	# --- Constant Assignment -----------------------
+	
+	Tokens
+		<ConstantValueAssign>		<EqualSignChar>
+	End
+	Syntax
+		<ConstantAssignment> 			Optional <Ws> <ConstantValueAssign> ! Optional <Ws> <ConstantLiteral>
+	End
+	
+	
+	# --- Class -----------------------
+	
+	Tokens
+		<ClassKeyword>				CiString class
+		<AbstractKeyword>			CiString abstract
+		<StaticKeyword>				CiString static
+		<NativeKeyword>				CiString native
+		<ExtendsKeyword>			CiString extends
+		<ImplementsKeyword>		CiString implements
+		<FieldKeyword>				CiString field
+		<MethodKeyword>				CiString method
+		<ConstructorKeyword>	CiString constructor
+		<ReadOnlyKeyword>			CiString readonly
+		<ForceKeyword>				CiString force
+		<OverrideKeyword>			CiString override
+		<OverridableKeyword>	CiString overridable
+		<PropertyKeyword>			CiString property
+		<GetKeyword>					CiString get
+		<SetKeyword>					CiString set
+	End
+	Syntax
+		<ClassType>							[ <AbstractKeyword> <StaticKeyword> <NativeKeyword> ]
+		<ClassHeadLine> 				Optional <Ws> Optional ( <InternalKeyword> <Ws> ) Optional ( <NativeKeyword> <Ws> ) Optional ( <ClassType> <Ws> ) <ClassKeyword> ! <Ws> <TypeName> Optional <Extends> Optional <Implements> <LineEnd>
+		<Extends>								<Ws> <ExtendsKeyword> ! <Ws> <TypeName>
+		<Implements>						<Ws> <ImplementsKeyword> ! <Ws> <TypeName> Repeat* ( Optional <Ws> <Comma> ! Optional <LineContinuation> <TypeName> )
+		
+		<FieldLine>							Optional <Ws> Optional ( <StaticKeyword> <Ws> ) Optional ( <ReadOnlyKeyword> <Ws> ) <FieldKeyword> ! <Ws> <Identifier> Optional <ConstantAssignment> <LineEnd>
+		
+		<MethodHead>						Optional <Ws> Optional ( [ <StaticKeyword> <OverrideType> ] <Ws> ) <MethodKeyword> ! <Ws> <Identifier> Optional <Ws> <Parameters>
+		<MethodLines>						<MethodHead> ! <ColonNotationOrCodeBlock>
+		
+		<ConstructorHeadLine>		Optional <Ws> <ConstructorKeyword> ! Optional <Ws> <Parameters> <LineEnd>
+		<ConstructorLines>			<ConstructorHeadLine> ! Optional <CodeBlock> <EndLine>
+		
+		<OverrideType>					[ ( <ForceKeyword> <Ws> <OverrideKeyword> ) <OverrideKeyword> <OverridableKeyword> ]
+		
+		<NativeConstructorLine>	Optional <Ws> <NativeKeyword> <Ws> <ConstructorKeyword> ! Optional <Ws> <Parameters> <LineEnd>
+		<NativeMethodLine>			Optional <Ws> <NativeKeyword> <Ws> Optional ( <StaticKeyword> <Ws> ) Optional ( <OverrideType> <Ws> ) <MethodKeyword> ! <Ws> <Identifier> Optional <Ws> <Parameters> <LineEnd>
+		
+		<AbstractMethodLine>		Optional <Ws> <AbstractKeyword> <Ws> <MethodKeyword> ! <Ws> <Identifier> Optional <Ws> <Parameters> <LineEnd>
+		
+		<GetHeadLine>						Optional <Ws> <GetKeyword> ! <LineEnd>
+		<GetLines>							<GetHeadLine> ! Optional <CodeBlock> <EndLine>
+		<SingleGetLine>					Optional <Ws> <GetKeyword> <ColonNotation> ! <ColonNotationStatement>
+		
+		<SetHeadLine>						Optional <Ws> <SetKeyword> ! <LineEnd>
+		<SetLines>							<SetHeadLine> ! Optional <CodeBlock> <EndLine>
+		<SingleSetLine>					Optional <Ws> <SetKeyword> <ColonNotation> ! <ColonNotationStatement>
+
+		<ColonNotationStatement>	[ <Statement> <LineEnd> ]
+		
+		<PropertyHeadLine>			Optional <Ws> Optional ( [ <StaticKeyword> <OverrideType> ] <Ws> ) <PropertyKeyword> ! <Ws> <Identifier> <LineEnd>
+		<PropertyLines>					<PropertyHeadLine> ! Repeat* <EmptyLine> [ <SingleGetLine> <GetLines> ] Repeat* <EmptyLine> [ <SingleSetLine> <SetLines> ] Repeat* <EmptyLine> <EndLine>
+		
+		<AbstractPropertyLine>	Optional <Ws> <AbstractKeyword> <Ws> Optional ( <ReadOnlyKeyword> ! <Ws> ) <PropertyKeyword> ! <Ws> <Identifier> <LineEnd>
+		
+		<ColonNotationOrCodeBlock>	[ ( <ColonNotation> ! <Statement> ) ( <LineEnd> Optional <CodeBlock> <EndLine> ) ]
+		
+		<ReadOnlyPropertyLines>	Optional <Ws> Optional ( [ <StaticKeyword> <OverrideType> ] <Ws> ) <ReadOnlyKeyword> <Ws> <PropertyKeyword> ! <Ws> <Identifier> <ColonNotationOrCodeBlock>
+		
+		<ClassLines>						<ClassHeadLine> ! Repeat* [ <EmptyLine> <FieldLine> <MethodLines> <ConstructorLines> <AbstractMethodLine> <NativeMethodLine> <NativeConstructorLine> <PropertyLines> <ReadOnlyPropertyLines> <AbstractPropertyLine> ] <EndLine>
+	End
+	
+	
+	# --- CodeBlock -----------------------
+	
+	Syntax
+		<CodeBlock>			Repeat* [ <EmptyLine> <StatementBlock> <Statement> ]
+	End
+	
+	
+	# --- Statements -----------------------
+	
+	Tokens
+		<VarKeyword>				CiString var
+		<ReturnKeyword>			CiString return
+		<ThrowKeyword>			CiString throw
+		<BreakKeyword>			CiString break
+		<ContinueKeyword>		CiString continue
+		
+		<Assignment>				<EqualSignChar>
+		<PlusAssign>				<PlusChar> <EqualSignChar>
+		<MinusAssign>				<MinusChar> <EqualSignChar>
+		<MultiplyAssign>		<MultiplyChar> <EqualSignChar>
+		<DivideAssign>			<DivideChar> <EqualSignChar>
+		<ModuloAssign>			<ModuloChar> <EqualSignChar>
+		
+		<AndAssign>					<AndChar> <EqualSignChar>
+		<OrAssign>					<OrChar> <EqualSignChar>
+		<XorAssign>					<XorChar> <EqualSignChar>
+		<LeftShiftAssign>		<SmallerChar> <SmallerChar> <EqualSignChar>
+		<RightShiftAssign>	<GreaterChar> <GreaterChar> <EqualSignChar>
+		
+		<NullDefaultAssign>	<QuestionMarkChar> <QuestionMarkChar> <EqualSignChar>
+		
+		<Increment>					<PlusChar> <PlusChar>
+		<Decrement>					<MinusChar> <MinusChar>
+		
+	End
+	Syntax
+		<VarDefStatement>		Optional <Ws> <VarKeyword> <Ws> <Identifier> ! [ <LineEnd> ( Optional <Ws> <Assignment> Optional <Ws> <Expression> <LineEnd> ) ]
+		<ReturnStatement>		Optional <Ws> <ReturnKeyword> Optional ( <Ws> <Expression> ) <LineEnd>
+		<ThrowStatement>		Optional <Ws> <ThrowKeyword> <Ws> <Expression> <LineEnd>
+		
+		<BreakStatement>			Optional <Ws> <BreakKeyword> <LineEnd>
+		<ContinueStatement>		Optional <Ws> <ContinueKeyword> <LineEnd>
+		
+		<IncrementDecrementStatement>		Optional <Ws> <Assignable> Optional <Ws> [ <Increment> <Decrement> ] <LineEnd>
+		
+		<SingleForeachLine>	<ForeachHead> <ColonNotation> ! <Statement>
+		<SingleForLine>			<ForHead> <ColonNotation> ! <Statement>
+		<SingleWhileLine>		<WhileHead> <ColonNotation> ! <Statement>
+		<SingleUntilLine>		<UntilHead> <ColonNotation> ! <Statement>
+		<SingleIfLine>			<IfHead> <ColonNotation> ! <Statement>
+		<SingleTryLine>			<TryHead> <ColonNotation> ! <Statement>
+		
+		<ExpressionStatement>		Optional <Ws> <Expression> <LineEnd>
+		
+		<AssignmentOperator>			[ <Assignment> <PlusAssign> <MinusAssign> <MultiplyAssign> <DivideAssign> <ModuloAssign> <AndAssign> <OrAssign> <XorAssign> <LeftShiftAssign> <RightShiftAssign> <NullDefaultAssign> ]
+		<Assignable>							[ <CodeBlockNamespaceOrEntityID> <Identifier> ] Optional ( Optional <Ws> <SequentialOperator> )
+		<AssignmentStatement>			Optional <Ws> <Assignable> Optional <Ws> <AssignmentOperator> Optional <LineContinuation> <Expression> <LineEnd>
+		
+		<Statement>					[ <IncrementDecrementStatement>	<BreakStatement> <ContinueStatement> <AssignmentStatement> <VarDefStatement> <ReturnStatement> <ThrowStatement> <SingleTryLine> <SingleForeachLine> <SingleForLine> <SingleWhileLine> <SingleUntilLine> <SingleIfLine> ( Not <EndLine> Not <LoopLine> Not <ElseKeyword> <ExpressionStatement> ) ]
+	End
+	
+	
+	# --- Statement Blocks -----------------------
+	
+	Tokens
+		<ForeachKeyword>		CiString foreach
+		<InKeyword>					CiString in
+		<ForKeyword>				CiString for
+		<ToKeyword>					CiString to
+		<ByKeyword>					CiString by
+		<WhileKeyword>			CiString while
+		<UntilKeyword>			CiString until
+		<DoKeyword>					CiString do
+		<LoopKeyword>				CiString loop
+		<IfKeyword>					CiString if
+		<ElseKeyword>				CiString else
+		<SwitchKeyword>			CiString switch
+		<CaseKeyword>				CiString case
+		<DefaultKeyword>		CiString default
+		<TryKeyword>				CiString try
+		<CatchKeyword>			CiString catch
+		<FinallyKeyword>		CiString finally
+	End
+	Syntax
+		<ForeachHead>							Optional <Ws> <ForeachKeyword> <Ws> ! Optional ( <VarKeyword> <Ws> ) <Identifier> <Ws> <InKeyword> <Ws> <Expression>
+		<ForeachStatementBlock>		<ForeachHead> <LineEnd> Optional <CodeBlock> <EndLine>
+		
+		<ForHead>									Optional <Ws> <ForKeyword> <Ws> ! Optional ( <VarKeyword> <Ws> ) <Identifier> Optional <Ws> <Assignment> Optional <Ws> <Expression> <Ws> <ToKeyword> <Ws> <Expression> Optional ( <Ws> <ByKeyword> <Ws> Optional <Minus> [ <FloatLiteral> <IntLiteral> ] )
+		<ForStatementBlock>				<ForHead> <LineEnd> Optional <CodeBlock> <EndLine>
+		
+		<WhileHead>								Optional <Ws> <WhileKeyword> <Ws> ! <Expression>
+		<WhileStatementBlock>			<WhileHead> <LineEnd> Optional <CodeBlock> <EndLine>
+		
+		<UntilHead>								Optional <Ws> <UntilKeyword> <Ws> ! <Expression>
+		<UntilStatementBlock>			<UntilHead> <LineEnd> Optional <CodeBlock> <EndLine>
+		
+		<LoopLine>								Optional <Ws> <LoopKeyword> Optional ( <Ws> [ <UntilKeyword> <WhileKeyword> ] <Ws> <Expression> ) <LineEnd> 
+		<DoStatementBlock>				Optional <Ws> <DoKeyword> <LineEnd> Optional <CodeBlock> <LoopLine>
+		
+		<IfHead>									Optional <Ws> <IfKeyword> <Ws> ! <Expression>
+		<ElseIfHead>							Optional <Ws> <ElseKeyword> <Ws> <IfKeyword> <Ws> ! <Expression>
+		<ElseHead>								Optional <Ws> <ElseKeyword>
+		
+		<IfStatementBlock>				<IfHead> [ ( <ColonNotation> ! <Statement> Optional <FollowingElse> ) ( <LineEnd> Optional <CodeBlock> [ <EndLine> <FollowingElse> ] ) ]
+		<FollowingElse>						[ <ElseIfBlock> <ElseBlock> ]
+		<ElseIfBlock>							<ElseIfHead> [ ( <ColonNotation> ! <Statement> Optional <FollowingElse> ) ( <LineEnd> Optional <CodeBlock> [ <EndLine> <FollowingElse> ] ) ]
+		<ElseBlock>								<ElseHead> [ ( <ColonNotation> ! <Statement> ) ( <LineEnd> Optional <CodeBlock> <EndLine> ) ]
+		
+		
+		<TryHead>									Optional <Ws> <TryKeyword>
+		<CatchHead>								Optional <Ws> <CatchKeyword> <Ws> <Identifier>
+		<FinallyHead>							Optional <Ws> <FinallyKeyword>
+		
+		<TryStatementBlock>				<TryHead> [ ( <ColonNotation> ! <Statement> Optional <FollowingCatchFinally> ) ( <LineEnd> Optional <CodeBlock> [ <EndLine> <FollowingCatchFinally> ] ) ]
+		<FollowingCatchFinally>		[ <CatchBlock> <FinallyBlock> ]
+		<CatchBlock>							<CatchHead> [ ( <ColonNotation> ! <Statement> Optional <FinallyBlock> ) ( <LineEnd> Optional <CodeBlock> [ <EndLine> <FinallyBlock> ] ) ]
+		<FinallyBlock>						<FinallyHead> [ ( <ColonNotation> ! <Statement> ) ( <LineEnd> Optional <CodeBlock> <EndLine> ) ]
+		
+		
+		<SwitchStatementBlock>		Optional <Ws> <SwitchKeyword> <Ws> <Expression> <LineEnd> Optional <SwitchBlockContent> <EndLine>
+		<SwitchBlockContent>			Repeat* [ <EmptyLine> <SwitchCase> ] Optional ( <SwitchDefault> Repeat* <EmptyLine> )
+		<SwitchCase>							Optional <Ws> <CaseKeyword> ! <Ws> <Expression> <ColonNotationOrCodeBlock>
+		<SwitchDefault>						Optional <Ws> <DefaultKeyword> ! <ColonNotationOrCodeBlock>
+		
+		<StatementBlock>					[ <ForeachStatementBlock> <ForStatementBlock> <WhileStatementBlock> <UntilStatementBlock> <DoStatementBlock> <TryStatementBlock> <IfStatementBlock> <SwitchStatementBlock> ]
+	End
+	
+	
+	# --- Expressions -----------------------
+	
+	Chars
+		<PlusChar>							+
+		<MultiplyChar>					*
+		<DivideChar>						/
+		<ModuloChar>						%
+		
+		<AndChar>								&
+		<OrChar>								|
+		<XorChar>								^
+		
+		<ComplementChar>				~
+		<ExclamationMarkChar>		!
+		<QuestionMarkChar>			?
+		
+		<GreaterChar>						>
+		<SmallerChar>						<
+		
+	End
+	Tokens
+		<Plus>									<PlusChar>
+		<Minus>									<MinusChar>
+		<Multiply>							<MultiplyChar>
+		<Divide>								<DivideChar>
+		<Modulo>								<ModuloChar>
+		
+		<AndSign>								<AndChar>
+		<OrSign>								<OrChar>
+		<Xor>										<XorChar>
+		
+		<Complement>						<ComplementChar>
+		
+		<LeftShift>							<GreaterChar> <GreaterChar>
+		<RightShift>						<SmallerChar> <SmallerChar>
+		
+		<Equal>									<EqualSignChar> <EqualSignChar>
+		<NotEqual>							<ExclamationMarkChar> <EqualSignChar>
+		<GreaterEqual>					<GreaterChar> <EqualSignChar>
+		<SmallerEqual>					<SmallerChar> <EqualSignChar>
+		
+		<PointerEqual>					<EqualSignChar> <EqualSignChar> <EqualSignChar>
+		<PointerNotEqual>				<ExclamationMarkChar> <EqualSignChar> <EqualSignChar>
+		
+		<Greater>								<GreaterChar>
+		<Smaller>								<SmallerChar>
+		
+		<AccessDot>							<DotChar>
+		
+		<SafeAccessDot>					<QuestionMarkChar> <DotChar>
+		<SafeOpeningBracket>		<QuestionMarkChar> <OpeningBracketChar>
+		
+		<AndKeyword>						CiString and
+		<OrKeyword>							CiString or
+		<NotKeyword>						CiString not
+		
+		<IsKeyword>							CiString is
+		
+		<NullDefault>						<QuestionMarkChar> <QuestionMarkChar>
+		
+		<ExclamationMark>				<ExclamationMarkChar>
+		<QuestionMark>					<QuestionMarkChar>
+	End
+	Syntax
+	
+		<CallOperator>					<OpeningParenthesis> ! Optional <LineContinuation> Optional ( <Expression> Repeat* ( Optional <LineContinuation> <Comma> Optional <LineContinuation> <Expression> ) Optional <LineContinuation> ) <ClosingParenthesis>
+		<AccessOperator>				[ <SafeAccessDot> <AccessDot> ] Optional <LineContinuation> <Identifier> Optional ( Optional <Ws> <SequentialOperator> )
+		<ArrayAccessOperator>		[ <SafeOpeningBracket> <OpeningBracket> ] ! Optional <LineContinuation> <Expression> Optional <LineContinuation> <ClosingBracket> 
+		<SequentialOperator>		[ <CallOperator> <AccessOperator> <ArrayAccessOperator> ] Optional ( Optional <Ws> <SequentialOperator> )
+		
+		<SignBinaryOperator>		[ <PointerEqual> <PointerNotEqual> <NullDefault> <NotEqual> <Equal> <GreaterEqual> <SmallerEqual> <LeftShift>	<RightShift> <Greater> <Smaller> <Plus> <Minus> <Multiply> <Divide> <Modulo> <AndSign> <OrSign> <Xor> ] ! Optional <LineContinuation> <Expression>
+		<WsBinaryOperator>			[ <AndKeyword> <OrKeyword> ( <IsKeyword> Optional ( <Ws> <NotKeyword> ) ) ] ! <LineContinuation> <Expression>
+		
+		<TernaryOperator>				<QuestionMark> <LineContinuation> ! <Expression> <Ws> <ExclamationMark> <LineContinuation> <Expression>
+		
+		<PrefixOperator>				[ ( <NotKeyword> <Ws> ) ( [ <Complement> <Plus> <Minus> ] Optional <Ws> ) ]
+		
+		<Group>									<OpeningParenthesis> ! Optional <LineContinuation> <Expression> Optional <LineContinuation> <ClosingParenthesis>
+		<SingleExpression>			[ <FloatLiteral> <BinaryIntLiteral> <HexIntLiteral> <DecimalIntLiteral> <BoolLiteral> <NullKeyword> <CharLiteral> <StringLiteral> <IStringLiteral> <ArrayLiteral> <CodeBlockNamespaceOrEntityID> <Identifier> <Group> ]
+		<Expression>   					Optional <PrefixOperator> <SingleExpression> Optional ( Optional <Ws> <SequentialOperator> ) Optional [ ( Optional <Ws> <SignBinaryOperator> ) ( <Ws> <WsBinaryOperator> ) ( Optional <Ws> <TernaryOperator> ) ]
+	End
+	
+	# --- Interface -----------------------
+	
+	Tokens
+		<InterfaceKeyword>			CiString interface
+	End
+	Syntax
+		<InterfaceHeadLine> 		Optional <Ws> Optional ( <InternalKeyword> <Ws> ) <InterfaceKeyword> ! <Ws> <TypeName> Optional <Extends> <LineEnd>
+		
+		<InterfaceMethodLine>		Optional <Ws> <MethodKeyword> ! <Ws> <Identifier> Optional <Ws> <Parameters> <LineEnd>
+		
+		<InterfacePropertyLine>	Optional <Ws> Optional ( <ReadOnlyKeyword> <Ws> ) <PropertyKeyword> ! <Ws> <Identifier> <LineEnd>
+		
+		<InterfaceLines>				<InterfaceHeadLine> ! Repeat* [ <EmptyLine> <InterfaceMethodLine> <InterfacePropertyLine> ] <EndLine>
+	End
+	
+	
+	# --- Enum -----------------------
+	
+	Tokens
+		<EnumKeyword>				CiString enum
+	End
+	Syntax
+		<EnumHeadLine> 			Optional <Ws> Optional ( <InternalKeyword> <Ws> ) <EnumKeyword> ! <Ws> <TypeName> <LineEnd>
+		<EnumValueLine>			Optional <Ws> Not <EndKeyword> <Identifier> ! Optional <ConstantAssignment> <LineEnd>
+		<EnumLines>					<EnumHeadLine> ! Repeat* [ <EmptyLine> <EnumValueLine> ] <EndLine>
+	End
+	
+	
+	# --- Top Level -----------------------
+	
+	Syntax
+		<LsDocumentContentItem>		[ <Namespace> <Using> ]
+		<LsDocumentContent>				<LsDocumentContentItem> Repeat* ( <LineBreak> Repeat* <EmptyLine> <LsDocumentContentItem> )
+		
+		<EmptyLsDocument>					<EmptyLineContent> Repeat* ( <LineBreak> <EmptyLineContent> )
+		<NonEmptyLsDocument>			Repeat* ( <EmptyLineContent> <LineBreak> ) <LsDocumentContent> Optional ( <LineBreak> Optional ( <EmptyLineContent> Repeat* ( <LineBreak> <EmptyLineContent> ) ) Optional <LineBreak> )
+		<LsDocument>							[ <NonEmptyLsDocument> <EmptyLsDocument> ]
+	End
+	RootRule <LsDocument>
+	
+	TokenCategories
+		Keyword			<NamespaceKeyword> <InternalKeyword> <UsingKeyword> <ClassKeyword> <EnumKeyword> <EndKeyword> <StaticKeyword> <NativeKeyword> <AbstractKeyword> <ExtendsKeyword> <ImplementsKeyword> <InterfaceKeyword> <FieldKeyword> <ConstructorKeyword> <MethodKeyword> <ReadOnlyKeyword> <ForceKeyword> <OverrideKeyword> <OverridableKeyword> <ParamsKeyword> <PropertyKeyword> <GetKeyword> <SetKeyword> <VarKeyword> <TrueKeyword> <FalseKeyword> <NullKeyword> <ReturnKeyword> <ForeachKeyword> <InKeyword> <ForKeyword> <ToKeyword> <ByKeyword> <WhileKeyword> <UntilKeyword> <DoKeyword> <LoopKeyword> <IfKeyword> <ElseKeyword> <SwitchKeyword> <CaseKeyword> <DefaultKeyword> <AndKeyword> <OrKeyword> <NotKeyword> <IsKeyword> <ThrowKeyword> <BreakKeyword> <ContinueKeyword> <TryKeyword> <CatchKeyword> <FinallyKeyword>
+		Operator	 	<ConstantValueAssign> <Comma> <Colon> <Assignment> <InterpolatedArgDollar> <OpeningBracket> <ClosingBracket> <AccessDot> <Plus> <Minus> <Multiply> <Divide> <Equal> <GreaterEqual> <SmallerEqual> <Greater> <Smaller> <Modulo> <AndSign> <OrSign> <Xor> <Complement> <LeftShift> <RightShift> <NotEqual> <PointerEqual> <PointerNotEqual> <NullDefault> <QuestionMark> <ExclamationMark> <SafeAccessDot> <SafeOpeningBracket> <PlusAssign> <MinusAssign> <MultiplyAssign> <DivideAssign> <ModuloAssign> <AndAssign> <OrAssign> <XorAssign> <LeftShiftAssign> <RightShiftAssign> <NullDefaultAssign> <Increment> <Decrement>
+		Number			<DecimalIntLiteral> <BinaryIntLiteral> <HexIntLiteral> <FloatLiteral>
+		String			<SimpleStringStart> <SimpleStringEnd> <SimpleStringText> <CharStart> <CharEnd> <SimpleChar> <EscapedChar> <EscapedSimpleStringChar> <VerbatimStringStart> <VerbatimStringEnd> <VerbatimStringText> <EscapedTripleDoubleQuote> <TwoDoubleQuotes> <OneDoubleQuote> <StringBlockStart> <StringBlockEnd> <StringBlockText> <StringBlockIgnoredWhitespace> <EscapedSimpleIStringChar> <EscapedDollar> <SimpleIStringStart> <SimpleIStringEnd> <SimpleIStringText> <VerbatimIStringStart> <VerbatimIStringEnd> <VerbatimIStringText> <IStringBlockStart> <IStringBlockEnd> <IStringBlockText> <IStringBlockIgnoredWhitespace>
+	End
+End
