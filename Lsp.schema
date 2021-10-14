@@ -1,0 +1,278 @@
+﻿Schema
+	Element
+		Name LimaScriptPackage
+		
+		OptionalElement Dependencies
+		RepeatedElement* Namespace
+	End
+	
+	
+	# --- Dependencies ----------------------------
+	
+	Element
+		Name Dependencies
+		RepeatedAttribute* Dependency
+	End
+	Attribute Dependency String
+	
+	
+	# --- Namespace ----------------------------
+	
+	Element
+		Name Namespace
+		OptionalAttribute Name
+		List
+			Name Entities
+			Element Class
+			Element Enum
+			Element Interface
+		End
+	End
+	
+	Attribute Name String
+	Attribute Internal Bool
+	
+	
+	# --- Params ----------------------------
+	
+	Element
+		Name Params
+		RepeatedAttribute* Param
+		OptionalAttribute VarArgParam
+	End
+	
+	Attribute Param String
+	Attribute VarArgParam String
+	
+	
+	# --- Begin ----------------------------
+	
+	Element
+		Name Begin
+		
+		List
+			Name Statements
+			Attribute Expression
+			Attribute DefV
+			Attribute SetF
+			Attribute SetP
+			Attribute SetV
+			Attribute SetParam
+			Attribute Control
+			Attribute Return
+			Attribute Throw
+			Element If
+			Element For
+			Element Foreach
+			Element Loop
+			Element Switch
+			Element Try
+		End
+	End
+	
+	Attribute SetF String[]
+	Attribute SetP String[]
+	Attribute SetV String[]
+	Attribute SetParam String[]
+	
+	Attribute Expression String[]
+	Attribute DefV String[]
+	
+	Attribute Return String[]
+	Attribute Throw String[]
+	
+	Attribute Control ControlType
+	ValueType ControlType Enum Break Continue
+	
+	Element
+		Name If
+		RepeatedAttribute+ Cond
+		RepeatedElement+ Begin
+	End
+	
+	Attribute Cond String[]
+	
+	Element
+		Name For
+		RequiredAttribute DefV
+		RequiredAttribute While
+		OptionalAttribute SetV
+		OptionalAttribute SetF
+		OptionalAttribute SetP
+		OptionalAttribute SetParam
+		RequiredElement Begin
+	End
+	
+	Element
+		Name Foreach
+		RequiredAttribute Var
+		RequiredAttribute In
+		RequiredElement Begin
+	End
+	
+	Attribute Var String
+	Attribute In String[]
+	
+	Element
+		Name Loop
+		OptionalAttribute Cond
+		OptionalAttribute Until
+		OptionalAttribute DoWhile
+		OptionalAttribute DoUntil
+		RequiredElement Begin
+	End
+	
+	Attribute While String[]
+	Attribute Until String[]
+	Attribute DoWhile String[]
+	Attribute DoUntil String
+	
+	Element
+		Name Switch
+		RequiredAttribute Expression
+		RepeatedAttribute+ Case
+		RepeatedElement+ Begin
+	End
+	
+	Attribute Case String[]
+	
+	Element
+		Name Try
+		OptionalAttribute Catch
+		RepeatedElement+ Begin
+	End
+	
+	Attribute Catch String[]
+	
+	# --- Class ----------------------------
+	
+	Element
+		Name Class
+		RequiredAttribute Name
+		OptionalAttribute Internal
+		OptionalAttribute Native
+		OptionalAttribute Type
+		OptionalAttribute Extends
+		RepeatedAttribute* Implements
+		
+		OptionalElement Constructor
+		RepeatedElement* Field
+		RepeatedElement* Method
+		RepeatedElement* Property
+	End
+	
+	Attribute Type ClassType
+	ValueType ClassType Enum Abstract Static
+	
+	Attribute Extends String
+	Attribute Implements String
+	
+	Attribute Native Bool
+	
+	Attribute Static Bool
+	Attribute ReadOnly Bool
+	Attribute ConstValue String[]
+	
+	Element
+		Name Constructor
+		RequiredAttribute Name
+		RequiredElement Params
+		OptionalElement Begin
+		OptionalAttribute Native
+	End
+	
+	Element
+		Name Field
+		RequiredAttribute Name
+		OptionalAttribute Static
+		OptionalAttribute ReadOnly
+		OptionalAttribute ConstValue
+	End
+	
+	Element
+		Name Method
+		
+		RequiredAttribute Name
+		RequiredElement Params
+		OptionalAttribute Native
+		OptionalAttribute OverrideType
+		RequiredElement Begin
+	End
+	
+	Element
+		Name Property
+		
+		RequiredAttribute Name
+		OptionalAttribute Native
+		OptionalAttribute OverrideType
+		RequiredElement Get
+		OptionalElement Set
+	End
+	
+	Element
+		Name Set
+		Synonym Begin
+	End
+	
+	Element
+		Name Get
+		Synonym Begin
+	End
+	
+	Attribute
+		Id OverrideType
+		Name Type
+		Value OverrideType
+	End
+	
+	ValueType ImplementationType Enum Abstract Native
+	ValueType OverrideType Enum Abstract Overridable Override ForceOverride Static
+	
+	
+	# --- Interface ----------------------------
+	
+	Element
+		Name Interface
+		RequiredAttribute Name
+		OptionalAttribute Internal
+		OptionalAttribute Extends
+		RepeatedAttribute* Implements
+		
+		RepeatedElement* InterfaceProperty
+		RepeatedElement* InterfaceMethod
+	End
+	
+	Element
+		ID InterfaceProperty
+		Name Property
+		
+		OptionalAttribute ReadOnly
+	End
+	
+	Element
+		ID InterfaceMethod
+		Name Method
+		
+		RequiredElement Params
+	End
+	
+	
+	# --- Enum ----------------------------
+	
+	Element
+		Name Enum
+		RequiredAttribute Name
+		OptionalAttribute Internal
+		OptionalElement Values
+	End
+	
+	Element
+		Name Values
+		RepeatedAttribute* Value
+	End
+	
+	Attribute Value String[]
+	
+	
+	RootElement LimaScriptPackage
+End

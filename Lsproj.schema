@@ -1,0 +1,35 @@
+﻿Schema
+	# --- LimaScriptProject ----------------------------
+
+	Element
+		Name LimaScriptProject
+		OptionalAttribute Type
+		OptionalAttribute PackageId
+		OptionalElement Dependencies
+		OptionalElement Files
+	End
+	Attribute Type ProjectType
+	Attribute PackageId String
+	
+	ValueType ProjectType Enum App Library
+	
+	# --- Dependencies ----------------------------
+	
+	Element
+		Name Dependencies
+		RepeatedAttribute* Dependency
+	End
+	Attribute Dependency String
+	
+	
+	# --- Files ----------------------------
+	
+	Element
+		Name Files
+		RepeatedAttribute* File
+	End
+	Attribute File String
+		
+	
+  RootElement LimaScriptProject
+End
